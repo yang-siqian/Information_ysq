@@ -11,6 +11,7 @@ from config import config
 # 初始化数据库
 # 在flask很多扩展里可以先初始化扩展的对象，再用init_app初始化
 db = SQLAlchemy()
+redis_store = None
 
 def setup_log(config_name):
     """配置日志"""
@@ -43,6 +44,7 @@ def create_app(config_name):
     db.init_app(app)
 
     # 初始化Redis对象
+    global redis_store
     redis_store = StrictRedis(host=config[config_name].REDIS_HOST,port=config[config_name].REDIS_PORT)
 
     # 开启CSRF保护,只做服务器验证功能
