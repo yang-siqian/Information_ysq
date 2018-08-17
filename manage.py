@@ -15,17 +15,7 @@ Migrate(app,db)
 # 将迁移命令添加到manager中
 manager.add_command('db',MigrateCommand)
 
-@app.route("/")
-def index():
-    # session['name'] = 'laowang'
-    # 测试打印日志
-    logging.debug('测试debug')
-    logging.error('测试error')
-    logging.warning('测试warning')
-    logging.fatal('测试fatal')
 
-    current_app.logger.error('测试error')
-    return "index22233"
 
 if __name__ == '__main__':
     manager.run()

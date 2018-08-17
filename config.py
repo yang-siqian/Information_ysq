@@ -4,7 +4,7 @@ from redis import StrictRedis
 
 class Config(object):
     """项目的配置"""
-    DEBUG = True
+    # DEBUG = True
     SECRET_KEY ='Kx5jPQ5OAsxkNhOd+byp+mcTpiTpo9hS/YzHj6XuiW2woldfk1J8l5vJqhRG3tzm'
     # 为数据库添加配置
     SQLALCHEMY_DATABASE_URI = "mysql://root:mysql416@127.0.0.1:3306/information_ysq"
