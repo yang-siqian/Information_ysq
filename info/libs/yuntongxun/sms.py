@@ -6,7 +6,7 @@ from info.libs.yuntongxun.CCPRestSDK import REST
 _accountSid = '8aaf070865417618016551b31c0c07f9'
 
 # 说明：主账号Token，登陆云通讯网站后，可在控制台-应用中看到开发者主账号AUTH TOKEN
-_accountToken = '57c6c3ef3cef47e680519a734f6812f8'
+_accountToken = 'dcb2edc61ba64f8abde55e26ae6f8b1d'
 
 # 请使用管理控制台首页的APPID或自己创建应用的APPID
 _appId = '8aaf070865417618016551b31c6b0800'

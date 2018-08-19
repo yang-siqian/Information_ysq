@@ -1,6 +1,5 @@
 import random
 import re
-
 from flask import request, abort, current_app, make_response, jsonify
 from info import redis_store, constants
 from info.libs.yuntongxun.sms import CCP
@@ -45,7 +44,7 @@ def send_sms_code():
         return jsonify(errno=RET.NODATA,errmsg="图片验证码已过期")
 
     # 4.与用户验证码内容进行对比，如果比对不一致，返回验证码错误
-    if real_image_code.upper() != image_code.upper():
+    if real_image_code.decode().upper() != image_code.upper():
         return jsonify(errno=RET.DATAERR, errmsg="验证码输入错误")
 
     # 5.如果一致，生成验证码的内容（随机数据）
@@ -81,6 +80,7 @@ def get_image_code():
         return abort(403)
     # 3.生成图片验证码
     name, text, image = captcha.generate_captcha()
+    print(text)
 
     # 4.保存图片验证码文字内容到Redis
     try:
