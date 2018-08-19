@@ -1,11 +1,79 @@
 import random
 import re
-from flask import request, abort, current_app, make_response, jsonify
-from info import redis_store, constants
+from datetime import datetime
+
+from flask import request, abort, current_app, make_response, jsonify, session
+from info import redis_store, constants, db
 from info.libs.yuntongxun.sms import CCP
 from info.utils.response_code import RET
 from . import passport_blue
 from info.utils.captcha.captcha import captcha
+
+@passport_blue.route("/register",methods=["POST"])
+def register():
+    """
+    1.获取参数
+    2.校验参数
+    3.从服务器取得真实的短信验证码内容
+    4.与用户短信验证码内容进行对比，如果比对不一致，返回验证码错误
+    5.如果一致，初始化User模型，并且属性
+    6.将User模型添加到数据库
+    7.返回响应
+    """
+    #  1.获取参数
+    param_dict = request.json
+    mobile = request.json.get('mobile')
+    smscode = request.json.get('smscode')
+    password = request.json.get('password')
+
+    #  2.校验参数
+    if not all([mobile, smscode, password]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数有误")
+    # 校验手机号是否正确
+    if not re.match("1[35678]\\d{9}", mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg="手机号格式不正确")
+
+    #  3.从服务器取得真实的短信验证码内容
+    try:
+        real_sms_code = redis_store.get("SMS_" + mobile)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="数据查询失败")
+    if not real_sms_code:
+        return jsonify(errno=RET.NODATA,errmsg="短信验证码已过期")
+
+    # 4.与用户短信验证码内容进行对比，如果比对不一致，返回验证码错误
+    if real_sms_code != smscode:
+        return jsonify(errno=RET.DATAERR, errmsg="验证码输入错误")
+
+    # 5.如果一致，初始化User模型，并且属性
+    user = User()
+    user.mobile = mobile
+    # 暂时没有昵称用手机号代替
+    user.nick_name = mobile
+    # 记录用户最后一次登录时间
+    user.last_login = datetime.now()
+
+    # TODO 对密码做处理
+
+    # 6.将User模型添加到数据库
+    try:
+        db.session.set(user)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="数据保存失败")
+
+    # 往session中保存数据表示当前已登录
+    session['user_id'] = user.id
+    session['mobile'] = user.mobile
+    session['nick-name'] = user.nick_name
+
+    # 7.返回响应
+    return jsonify(errno=RET.OK,errmsg="注册成功")
+
+
 
 @passport_blue.route("/sms_code",methods=["POST"])
 def send_sms_code():
