@@ -17,6 +17,7 @@ def index():
     # redis_store.set('name','laowang')
     return render_template('news/index.html')
 
+# send_static_file是flask查找指定静态文件所调用的方法
 @index_blue.route("/favicon.ico")
 def favicon():
     return current_app.send_static_file('news/favicon.ico')
