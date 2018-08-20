@@ -10,6 +10,52 @@ from info.utils.response_code import RET
 from . import passport_blue
 from info.utils.captcha.captcha import captcha
 
+@passport_blue.route("/login",methods=["POST"])
+def login():
+    """
+    1. 获取参数和判断是否有值
+    2. 校验参数
+    3. 从数据库查询出指定的用户
+    4. 校验密码
+    5. 保存用户登录状态
+    6. 返回结果
+    """
+    #  1.获取参数
+    param_dict = request.json
+    mobile = request.json.get('mobile')
+    password = request.json.get('password')
+
+    #  2.校验参数
+    if not all([mobile, password]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数有误")
+    # 校验手机号是否正确
+    if not re.match("1[35678]\\d{9}", mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg="手机号格式不正确")
+
+    # 3.从数据库查询出指定的用户
+    try:
+        user = User.query.filter(User.mobile == mobile).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR,errmsg="数据查询错误")
+    # 判断用户是否存在
+    if not user:
+        return jsonify(errno=RET.NODATA,errmsg="用户不存在")
+
+    # 4. 校验密码
+    if not user.check_passowrd(password):
+        return jsonify(errno=RET.PWDERR,errmsg="用户名或者密码错误")
+
+    # 5.保存用户登录状态
+    session['user_id'] = user.id
+    session['mobile'] = user.mobile
+    session['nick_name'] = user.nick_name
+
+    # 7.返回响应
+    return jsonify(errno=RET.OK,errmsg="登录成功")
+
+
+
 @passport_blue.route("/register",methods=["POST"])
 def register():
     """
@@ -60,7 +106,7 @@ def register():
 
     # 6.将User模型添加到数据库
     try:
-        db.session.set(user)
+        db.session.add(user)
         db.session.commit()
     except Exception as e:
         current_app.logger.error(e)
@@ -70,7 +116,7 @@ def register():
     # 往session中保存数据表示当前已登录
     session['user_id'] = user.id
     session['mobile'] = user.mobile
-    session['nick-name'] = user.nick_name
+    session['nick_name'] = user.nick_name
 
     # 7.返回响应
     return jsonify(errno=RET.OK,errmsg="注册成功")
@@ -126,6 +172,7 @@ def send_sms_code():
     # 6.发送短信验证码
     #mobie:手机号  sms_code_str：验证码内容  SMS_CODE_REDIS_EXPIRES/5：短信验证码有效期60秒  选用模板为1
     result = CCP().send_template_sms(mobile,[sms_code_str,constants.SMS_CODE_REDIS_EXPIRES/5],'1')
+    # print(result)
     if result != 0:
         # 代表发送不成功
         return jsonify(errno=RET.THIRDERR,errmsg="短信发送失败")
