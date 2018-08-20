@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import request, abort, current_app, make_response, jsonify, session
 from info import redis_store, constants, db
 from info.libs.yuntongxun.sms import CCP
+from info.models import User
 from info.utils.response_code import RET
 from . import passport_blue
 from info.utils.captcha.captcha import captcha
@@ -54,7 +55,8 @@ def register():
     # 记录用户最后一次登录时间
     user.last_login = datetime.now()
 
-    # TODO 对密码做处理
+    # 对密码做处理
+    user.password = password
 
     # 6.将User模型添加到数据库
     try:
@@ -102,6 +104,7 @@ def send_sms_code():
     # 校验手机号是否正确
     if not re.match("1[35678]\\d{9}",mobile):
         return jsonify(errno=RET.PARAMERR, errmsg="手机号格式不正确")
+
     # 3.先从redis取出真实的验证码内容
     try:
         real_image_code = redis_store.get("ImageCodeId_"+image_code_id)
@@ -112,7 +115,7 @@ def send_sms_code():
         return jsonify(errno=RET.NODATA,errmsg="图片验证码已过期")
 
     # 4.与用户验证码内容进行对比，如果比对不一致，返回验证码错误
-    if real_image_code.decode().upper() != image_code.upper():
+    if real_image_code.upper() != image_code.upper():
         return jsonify(errno=RET.DATAERR, errmsg="验证码输入错误")
 
     # 5.如果一致，生成验证码的内容（随机数据）
@@ -132,6 +135,7 @@ def send_sms_code():
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="数据保存失败")
+
     # 7.告知发送结果
     return jsonify(errno=RET.OK,errmsg="短信发送成功")
 
@@ -143,9 +147,11 @@ def get_image_code():
     # 1.取到参数
     # args:取到url中？后面的参数
     image_code_id = request.args.get("imageCodeId",None)
+
     # 2.判断参数是否有值
     if not image_code_id:
         return abort(403)
+
     # 3.生成图片验证码
     name, text, image = captcha.generate_captcha()
     print(text)

@@ -45,7 +45,7 @@ def create_app(config_name):
 
     # 初始化Redis对象
     global redis_store
-    redis_store = StrictRedis(host=config[config_name].REDIS_HOST,port=config[config_name].REDIS_PORT)
+    redis_store = StrictRedis(host=config[config_name].REDIS_HOST,port=config[config_name].REDIS_PORT,decode_responses=True)
 
     # 开启CSRF保护,只做服务器验证功能
     # CSRFProtect(app)
