@@ -278,6 +278,17 @@ function sendSMSCode() {
     })
 }
 
+function logout() {
+    $.get("/passport/logout",function(resp){
+            // 刷新当前界面
+            alert("退出成功")
+            location.reload()
+        })
+
+    
+}
+
+
 // 调用该函数模拟点击左侧按钮
 function fnChangeMenu(n) {
     var $li = $('.option_list li');
