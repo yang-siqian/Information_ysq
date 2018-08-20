@@ -66,6 +66,16 @@ def login():
     session['user_id'] = user.id
     session['mobile'] = user.mobile
     session['nick_name'] = user.nick_name
+    # 设置用户当前最后一次登录时间
+    user.last_login = datetime.now()
+
+    # 可以设置SQLAlchemy相关配置，不用通过db.session.commit()提交
+    # try:
+    #     db.session.commit()
+    # except Exception as e:
+    #     current_app.logger.error(e)
+    #     db.session.rollback()
+
 
     # 7.返回响应
     return jsonify(errno=RET.OK,errmsg="登录成功")
