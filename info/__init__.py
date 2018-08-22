@@ -74,4 +74,8 @@ def create_app(config_name):
     app.register_blueprint(passport_blue)
 
     app.add_template_filter(set_filter,"set_class")
+
+    from info.modules.news import news_blue
+    app.register_blueprint(news_blue)
+
     return app
