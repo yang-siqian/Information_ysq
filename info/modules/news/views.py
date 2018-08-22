@@ -1,7 +1,7 @@
 from info import constants
-from info.models import News, User
+from info.models import News
 from info.modules.news import news_blue
-from flask import render_template, current_app, g
+from flask import render_template, current_app, g, abort
 
 from info.utils.set_filters import user_login_data
 
@@ -28,7 +28,20 @@ def news_detail(news_id):
     for news in news_list:
         news_dict_li.append(news.to_basic_dict())
 
+    # 查询新闻数据
+    news = None
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+    if not news:
+        abort(404)
+    # 更新点击次数
+    news.clicks += 1
+
     data = {
-        "news_dict_li":news_dict_li
+        "user":user.to_dict() if user else None,
+        "news_dict_li":news_dict_li,
+        "news":news.to_dict()
     }
     return render_template("news/detail.html",data=data)
