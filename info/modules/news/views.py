@@ -38,10 +38,17 @@ def news_detail(news_id):
         abort(404)
     # 更新点击次数
     news.clicks += 1
+    # 判断是否收藏该新闻，默认值为 false
+    is_collected = False
+    # 判断用户是否收藏过该新闻
+    if g.user:
+        if news in g.user.collection_news:
+            is_collected = True
 
     data = {
         "user":user.to_dict() if user else None,
         "news_dict_li":news_dict_li,
+        "is_collected": is_collected,
         "news":news.to_dict()
     }
     return render_template("news/detail.html",data=data)

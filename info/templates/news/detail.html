@@ -15,10 +15,15 @@
 <div class="detail_con fl">
     <h3>{{ data.news.title }}</h3>
     <div class="detail_about clearfix">
-        <span class="time_souce fl">{{ data.news.create_time }} 来源: {{ data.news.source }}/span>
+        <span class="time_souce fl">{{ data.news.create_time }} 来源: {{ data.news.source }}</span>
         <span class="comment fr">{{ data.news.comments_count }}</span>
     </div>
     {{ data.news.content | safe }}
+    <a href="javascript:;" class="collected block-center" data-newid="{{ data.news.id }}" style="display: {% if data.is_collected %} block
+    {% else %} none {% endif %};"><span class="out">已收藏</span><span class="over">取消收藏</span></a>
+    <a href="javascript:;" class="collection block-center" data-newid="{{ data.news.id }}" style="display: {% if data.is_collected %} none
+            {% else %} block {% endif %};">收藏</a>
+
     {% if data.user  %}
         <form action="" class="comment_form" data-newsid="{{ data.news.id }}">
             <div class="person_pic">
@@ -40,7 +45,6 @@
     <div class="comment_count">
         {{ data.news.comments_count }}条评论
     </div>
-
 
         <div class="comment_list_con">
             <div class="comment_list">
