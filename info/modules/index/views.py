@@ -13,11 +13,11 @@ def news_list():
     """
     # 1.获取参数
     # 新闻分类的id
-    cid = request.args.get("cid","1")
+    cid = request.args.get("cid", "1")
     # 页数，不传即获取第1页
-    page = request.args.get("page","1")
+    page = request.args.get("page", "1")
     # 每页多少条数据，如果不传，默认10条
-    per_page = request.args.get("per_page",10)
+    per_page = request.args.get("per_page", 10)
 
     # 2.校验参数
     try:
@@ -26,19 +26,19 @@ def news_list():
         per_page = int(per_page)
     except Exception as e:
         current_app.logger.error(e)
-        return jsonify(errno=RET.PARAMERR,errmsg="参数错误")
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
 
     filters = []
-    if  cid != 1:   #代表查询的不是最新的数据
+    if cid != 1:  # 代表查询的不是最新的数据
         # 需要添加条件
         filters.append(News.category_id == cid)
 
     # 3.查询数据
     try:
-        paginate = News.query.filter(*filters).order_by(News.create_time.desc()).paginate(page,per_page,False)
+        paginate = News.query.filter(*filters).order_by(News.create_time.desc()).paginate(page, per_page, False)
     except Exception as e:
         current_app.logger.error(e)
-        return jsonify(errno=RET.DBERR,errmsg="数据库查询错误")
+        return jsonify(errno=RET.DBERR, errmsg="数据库查询错误")
 
     # 取到当前页的数据
     news_list = paginate.items  # 模型对象列表
@@ -49,14 +49,13 @@ def news_list():
     for news in news_list:
         news_dict_li.append(news.to_basic_dict())
 
-    data={
-        "total_pages":total_pages,
+    data = {
+        "total_pages": total_pages,
         "current_page": current_page,
         "news_dict_li": news_dict_li
     }
 
-    return jsonify(errno=RET.OK,errmsg="OK",data = data )
-
+    return jsonify(errno=RET.OK, errmsg="OK", data=data)
 
 
 @index_blue.route("/")
@@ -65,7 +64,7 @@ def index():
     显示首页：
     1.如果用户已登录，将当前登录用户的数据传到模板中，供模板使用
     """
-    user_id = session.get("user_id",None)
+    user_id = session.get("user_id", None)
     user = None
     if user_id:
         try:
@@ -83,14 +82,13 @@ def index():
     for news in news_list:
         news_dict_li.append(news.to_basic_dict())
 
-
-
     data = {
-        "user":user.to_dict() if user else None,
+        "user": user.to_dict() if user else None,
         "news_dict_li": news_dict_li
     }
 
-    return render_template('news/index.html',data=data)
+    return render_template('news/index.html', data=data)
+
 
 # send_static_file是flask查找指定静态文件所调用的方法
 @index_blue.route("/favicon.ico")
