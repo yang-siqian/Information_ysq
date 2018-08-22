@@ -11,7 +11,7 @@ from config import config
 
 # 初始化数据库
 # 在flask很多扩展里可以先初始化扩展的对象，再用init_app初始化
-from info.utils.set_filters import set_filter
+
 
 db = SQLAlchemy()
 redis_store = None
@@ -73,6 +73,7 @@ def create_app(config_name):
     from info.modules.passport import passport_blue
     app.register_blueprint(passport_blue)
 
+    from info.utils.set_filters import set_filter
     app.add_template_filter(set_filter,"set_class")
 
     from info.modules.news import news_blue

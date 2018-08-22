@@ -1,7 +1,8 @@
-from flask import render_template, current_app, session, request, jsonify
+from flask import render_template, current_app, session, request, jsonify, g
 from info import constants
 from info.models import User, News, Category
 from info.utils.response_code import RET
+from info.utils.set_filters import user_login_data
 from . import index_blue
 
 
@@ -59,18 +60,20 @@ def news_list():
 
 
 @index_blue.route("/")
+@user_login_data
 def index():
     """
     显示首页：
     1.如果用户已登录，将当前登录用户的数据传到模板中，供模板使用
     """
-    user_id = session.get("user_id", None)
-    user = None
-    if user_id:
-        try:
-            user = User.query.get(user_id)
-        except Exception as e:
-            current_app.logger.error(e)
+    # user_id = session.get("user_id", None)
+    # user = None
+    # if user_id:
+    #     try:
+    #         user = User.query.get(user_id)
+    #     except Exception as e:
+    #         current_app.logger.error(e)
+    user = g.user
 
     # 右侧新闻排行的逻辑实现
     news_list = []

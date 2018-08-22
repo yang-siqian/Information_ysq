@@ -1,16 +1,22 @@
 from info import constants
-from info.models import News
+from info.models import News, User
 from info.modules.news import news_blue
-from flask import render_template, current_app
+from flask import render_template, current_app, g
+
+from info.utils.set_filters import user_login_data
 
 
 @news_blue.route('/<int:news_id>')
+@user_login_data
 def news_detail(news_id):
     """
     新闻详情
     :param news_id:
     :return:
     """
+    # 查询用户登录信息
+    user = g.user
+
 
     # 右侧新闻排行的逻辑实现
     news_list = []
