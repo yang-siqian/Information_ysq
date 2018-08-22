@@ -1,9 +1,51 @@
-from info import constants
+from info import constants, db
 from info.models import News
 from info.modules.news import news_blue
-from flask import render_template, current_app, g, abort
+from flask import render_template, current_app, g, abort, jsonify, request
 
+from info.utils.response_code import RET
 from info.utils.set_filters import user_login_data
+
+@news_blue.route("/news_collect", methods=['POST'])
+@user_login_data
+def news_collect():
+    """新闻收藏"""
+
+    user = g.user
+    json_data = request.json
+    news_id = json_data.get("news_id")
+    action = json_data.get("action")
+
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    if not news_id:
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    if action not in ("collect", "cancel_collect"):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询数据失败")
+
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="新闻数据不存在")
+
+    if action == "collect":
+        user.collection_news.append(news)
+    else:
+        user.collection_news.remove(news)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存失败")
+    return jsonify(errno=RET.OK, errmsg="操作成功")
 
 
 @news_blue.route('/<int:news_id>')
