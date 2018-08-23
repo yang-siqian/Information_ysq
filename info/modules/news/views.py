@@ -10,12 +10,12 @@ from info.utils.set_filters import user_login_data
 @user_login_data
 def news_collect():
     """新闻收藏"""
-
+    # 1.获取参数
     user = g.user
     json_data = request.json
     news_id = json_data.get("news_id")
     action = json_data.get("action")
-
+    # 2.校验参数
     if not user:
         return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
 
@@ -24,7 +24,7 @@ def news_collect():
 
     if action not in ("collect", "cancel_collect"):
         return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
-
+    # 3.查询数据
     try:
         news = News.query.get(news_id)
     except Exception as e:
@@ -34,6 +34,7 @@ def news_collect():
     if not news:
         return jsonify(errno=RET.NODATA, errmsg="新闻数据不存在")
 
+    # 4.向数据库添加收藏和取消收藏
     if action == "collect":
         user.collection_news.append(news)
     else:

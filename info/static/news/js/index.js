@@ -70,7 +70,7 @@ function updateNewsData() {
          data_querying = false
         if (resp.errno=="0"){
              // 给总页数赋值
-            total_page = resp.data.total_page
+            total_page = resp.data.total_pages
             // 代表请求成功
             // 清除已有的数据
             if(cur_page == 1){
