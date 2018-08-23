@@ -253,4 +253,5 @@ $(function(){
 function updateCommentCount() {
     var count = $(".comment_list").length
     $(".comment_count").html(count+"条评论")
+    $(".comment").html(count)
 }
