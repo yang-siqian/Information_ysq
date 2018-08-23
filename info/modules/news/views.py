@@ -1,10 +1,66 @@
 from info import constants, db
-from info.models import News
+from info.models import News, Comment
 from info.modules.news import news_blue
 from flask import render_template, current_app, g, abort, jsonify, request
 
 from info.utils.response_code import RET
 from info.utils.set_filters import user_login_data
+
+@news_blue.route("/news_comment", methods=['POST'])
+@user_login_data
+def comment_news():
+    """
+    评论新闻或回复新闻下面的评论
+    :return:
+    """
+    user = g.user
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    # 1.获取参数
+    news_id = request.json.get("news_id")
+    comment_content = request.json.get("comment")
+    parent_id = request.json.get("parent_id")
+
+    # 2.校验参数
+    if not all([news_id,comment_content]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    try:
+        news_id = int(news_id)
+        if parent_id:
+            parent_id = int(parent_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询数据失败")
+
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="新闻数据不存在")
+
+    # 3.初始化一个评论模型，并赋值
+    comment = Comment()
+    comment.user_id = user.id
+    comment.news_id = news_id
+    comment.content = comment_content
+    if parent_id:
+        comment.parent_id = parent_id
+
+    # 添加评论到数据库
+    try:
+        db.session.add(comment)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+
+    return jsonify(errno=RET.OK, errmsg="OK", data=comment.to_dict())
+
 
 @news_blue.route("/news_collect", methods=['POST'])
 @user_login_data
@@ -12,9 +68,9 @@ def news_collect():
     """新闻收藏"""
     # 1.获取参数
     user = g.user
-    json_data = request.json
-    news_id = json_data.get("news_id")
-    action = json_data.get("action")
+
+    news_id = request.json.get("news_id")
+    action = request.json.get("action")
     # 2.校验参数
     if not user:
         return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
