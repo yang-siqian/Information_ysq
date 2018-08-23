@@ -77,7 +77,7 @@ $(function(){
      
     })
 
-        // 评论提交
+    // 评论提交
     $(".comment_form").submit(function (e) {
         e.preventDefault();
         var news_id = $(this).attr('data-newsid')
@@ -133,6 +133,7 @@ $(function(){
                     $('.comment_sub').blur();
                     // 清空输入框内容
                     $(".comment_input").val("")
+                    updateCommentCount()
                 } else {
                     alert(resp.errmsg)
                 }
@@ -153,7 +154,7 @@ $(function(){
         {
             $(this).parent().toggle();
         }
-
+        // 子评论回复
         if(sHandler.indexOf('comment_up')>=0)
         {
             var $this = $(this);
@@ -229,6 +230,7 @@ $(function(){
                         $this.prev().val('')
                         // 关闭
                         $this.parent().hide()
+                        updateCommentCount()
                     }else {
                         alert(resp.errmsg)
                     }
@@ -247,3 +249,8 @@ $(function(){
 
     })
 })
+
+function updateCommentCount() {
+    var count = $(".comment_list").length
+    $(".comment_count").html(count+"条评论")
+}
