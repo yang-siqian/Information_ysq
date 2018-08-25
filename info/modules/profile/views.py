@@ -27,7 +27,7 @@ def pic_info():
         return jsonify(errno=RET.THIRDERR, errmsg="上传头像失败")
 
     user.avatar_url = key
-    return jsonify(errno=RET.OK, errmsg="OK", avatar_url=QINIU_DOMIN_PREFIX+key)
+    return jsonify(errno=RET.OK, errmsg="OK", data={"avatar_url":QINIU_DOMIN_PREFIX+key})
 
 
 
