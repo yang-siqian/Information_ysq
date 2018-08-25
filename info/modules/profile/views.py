@@ -5,6 +5,17 @@ from info.utils.response_code import RET
 from info.utils.set_filters import user_login_data
 
 
+@profile_blue.route("/pic_info",methods=["GET", "POST"])
+@user_login_data
+def pic_info():
+    user = g.user
+    if request.method == "GET":
+        return render_template("news/user_pic_info.html", data={"user": g.user.to_dict()})
+
+
+
+
+
 @profile_blue.route("/base_info",methods=["GET", "POST"])
 @user_login_data
 def base_info():
