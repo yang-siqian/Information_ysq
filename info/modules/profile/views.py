@@ -1,11 +1,47 @@
 from flask import render_template, g, redirect, request, jsonify, current_app
 
-from info import db
+from info import db, constants
 from info.constants import QINIU_DOMIN_PREFIX
 from info.modules.profile import profile_blue
 from info.utils.image_storage import storage
 from info.utils.response_code import RET
 from info.utils.set_filters import user_login_data
+
+
+@profile_blue.route("/collection")
+@user_login_data
+def user_collection():
+    page = request.args.get("p",1)
+    try:
+        page = int(page)
+    except Exception as e:
+        current_app.logger.error(e)
+        page = 1
+
+    user = g.user
+    current_page = 1
+    total_page = 1
+    news_list = []
+    try:
+        paginate = user.collection_news.paginate(page, constants.USER_COLLECTION_MAX_NEWS, False)
+        current_page = paginate.page
+        total_page = paginate.pages
+        news_list = paginate.items
+    except Exception as e:
+        current_app.logger.error(e)
+
+    news_dict_li = []
+    for news in news_list:
+        news_dict_li.append(news.to_basic_dict())
+
+
+    data={
+        "total_page": total_page,
+        "current_page": current_page,
+        "collections": news_dict_li
+    }
+    return render_template("/news/user_collection.html", data=data)
+
 
 
 @profile_blue.route("/pass_info",methods=["GET", "POST"])
