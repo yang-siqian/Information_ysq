@@ -50,6 +50,7 @@ def comment_like():
             comment_like_model.user_id = user.id
             comment_like_model.comment_id = comment_id
             db.session.add(comment_like_model)
+            comment.like_count += 1
 
     else:
         comment_like_model = CommentLike.query.filter(CommentLike.user_id==user.id,CommentLike.comment_id==comment.id).first()
@@ -226,10 +227,10 @@ def news_detail(news_id):
 
 
     data = {
-        "user":user.to_dict() if user else None,
-        "news_dict_li":news_dict_li,
+        "user": user.to_dict() if user else None,
+        "news_dict_li": news_dict_li,
         "is_collected": is_collected,
-        "news":news.to_dict(),
-        "comments":comment_dict_li
+        "news": news.to_dict(),
+        "comments": comment_dict_li
     }
     return render_template("news/detail.html",data=data)
