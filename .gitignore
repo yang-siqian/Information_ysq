@@ -108,3 +108,4 @@ venv.bak/
 logs/log*
 migrations
 .qiniu*
+test.py
