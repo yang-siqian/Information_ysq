@@ -10,7 +10,7 @@ from info.utils.response_code import RET
 from . import passport_blue
 from info.utils.captcha.captcha import captcha
 
-@passport_blue.route("/logout", methods=['POST'])
+@passport_blue.route("/logout", methods=['GET','POST'])
 def logout():
     """
     退出登录
