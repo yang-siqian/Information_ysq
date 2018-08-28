@@ -66,6 +66,18 @@ def create_app(config_name):
         response.set_cookie("csrf_token",csrf_token)
         return response
 
+    from flask import render_template, g
+    from info.utils.set_filters import user_login_data
+    @app.errorhandler(404)
+    @user_login_data
+    def page_not_found(_):
+        user = g.user
+        data = {"user_info": user.to_dict() if user else None}
+        return render_template('news/404.html', data=data)
+        return app
+
+
+
     # 注册蓝图
     from info.modules.index import index_blue
     app.register_blueprint(index_blue)
