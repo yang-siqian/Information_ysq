@@ -10,7 +10,7 @@ from info.utils.response_code import RET
 from . import passport_blue
 from info.utils.captcha.captcha import captcha
 
-@passport_blue.route("/logout")
+@passport_blue.route("/logout", methods=['POST'])
 def logout():
     """
     退出登录
@@ -21,6 +21,7 @@ def logout():
     session.pop("user_id",None)
     session.pop("mobile",None)
     session.pop("nick_name",None)
+    session.pop('is_admin', None)
 
     return jsonify(errno=RET.OK,errmsg="退出成功")
 
