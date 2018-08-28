@@ -1,8 +1,71 @@
+import time
+from datetime import datetime, timedelta
 from flask import render_template, request, current_app, g, redirect, url_for, session
 
 from info.models import User
 from info.modules.admin import admin_blue
 from info.utils.set_filters import user_login_data
+
+
+@admin_blue.route('/user_count')
+def user_count():
+    total_count = 0
+    try:
+        total_count = User.query.filter(User.is_admin == False).count()
+    except Exception as e:
+        current_app.logger.error(e)
+
+    # 查询月新增数
+    mon_count = 0
+    try:
+        now = time.localtime()
+        mon_begin = '%d-%02d-01' % (now.tm_year, now.tm_mon)
+        mon_begin_date = datetime.strptime(mon_begin, '%Y-%m-%d')
+        mon_count = User.query.filter(User.is_admin == False, User.create_time >= mon_begin_date).count()
+    except Exception as e:
+        current_app.logger.error(e)
+
+    # 查询日新增数
+    day_count = 0
+    try:
+        day_begin = '%d-%02d-%02d' % (now.tm_year, now.tm_mon, now.tm_mday)
+        day_begin_date = datetime.strptime(day_begin, '%Y-%m-%d')
+        day_count = User.query.filter(User.is_admin == False, User.create_time > day_begin_date).count()
+    except Exception as e:
+        current_app.logger.error(e)
+
+    # 查询图表信息
+    # 获取到当天00:00:00时间
+    now_date = datetime.strptime(datetime.now().strftime('%Y-%m-%d'), '%Y-%m-%d')
+    # 定义空数组，保存数据
+    active_date = []
+    active_count = []
+
+    # 依次添加数据，再反转
+    for i in range(0, 31):
+        begin_date = now_date - timedelta(days=i)
+        end_date = now_date - timedelta(days=(i - 1))
+        active_date.append(begin_date.strftime('%Y-%m-%d'))
+        count = 0
+        try:
+            count = User.query.filter(User.is_admin == False,
+                                      User.last_login >= begin_date,
+                                      User.last_login < end_date).count()
+        except Exception as e:
+            current_app.logger.error(e)
+        active_count.append(count)
+
+    active_date.reverse()
+    active_count.reverse()
+
+    data = {"total_count": total_count,
+            "mon_count": mon_count,
+            "day_count": day_count,
+            "active_date": active_date,
+            "active_count": active_count}
+
+    return render_template('admin/user_count.html', data=data)
+
 
 
 @admin_blue.route('/index')
