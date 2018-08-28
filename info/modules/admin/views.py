@@ -3,9 +3,49 @@ from datetime import datetime, timedelta
 from flask import render_template, request, current_app, g, redirect, url_for, session
 
 from info import constants
-from info.models import User
+from info.models import User, News
 from info.modules.admin import admin_blue
 from info.utils.set_filters import user_login_data
+
+
+@admin_blue.route('/news_review')
+def news_review():
+    """返回待审核新闻列表"""
+
+    page = request.args.get("p", 1)
+    try:
+        page = int(page)
+    except Exception as e:
+        current_app.logger.error(e)
+        page = 1
+
+    news_list = []
+    current_page = 1
+    total_page = 1
+
+    try:
+        paginate = News.query.filter(News.status != 0) \
+            .order_by(News.create_time.desc()) \
+            .paginate(page, constants.ADMIN_NEWS_PAGE_MAX_COUNT, False)
+
+        news_list = paginate.items
+        current_page = paginate.page
+        total_page = paginate.pages
+    except Exception as e:
+        current_app.logger.error(e)
+
+    news_dict_list = []
+    for news in news_list:
+        news_dict_list.append(news.to_review_dict())
+
+    data = {
+            "total_page": total_page,
+            "current_page": current_page,
+            "news_list": news_dict_list
+    }
+    return render_template("admin/news_review.html", data=data)
+
+
 
 
 @admin_blue.route('/user_list')

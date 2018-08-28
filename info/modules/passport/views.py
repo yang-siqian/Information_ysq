@@ -95,7 +95,6 @@ def register():
     7.返回响应
     """
     #  1.获取参数
-    param_dict = request.json
     mobile = request.json.get('mobile')
     smscode = request.json.get('smscode')
     password = request.json.get('password')
