@@ -1,11 +1,79 @@
 import time
 from datetime import datetime, timedelta
-from flask import render_template, request, current_app, g, redirect, url_for, session
+from flask import render_template, request, current_app, g, redirect, url_for, session, jsonify
 
-from info import constants
+from info import constants, db
 from info.models import User, News
 from info.modules.admin import admin_blue
+from info.utils.response_code import RET
 from info.utils.set_filters import user_login_data
+
+
+
+@admin_blue.route('/news_review_detail', methods=["GET", "POST"])
+def news_review_detail():
+    """新闻审核"""
+    if request.method == "GET":
+        # 获取新闻id
+        news_id = request.args.get("news_id")
+        if not news_id:
+            return render_template('admin/news_review_detail.html', data={"errmsg": "未查询到此新闻"})
+
+        # 通过id查询新闻
+        news = None
+        try:
+            news = News.query.get(news_id)
+        except Exception as e:
+            current_app.logger.error(e)
+
+        if not news:
+            return render_template('admin/news_review_detail.html', data={"errmsg": "未查询到此新闻"})
+
+        # 返回数据
+        data = {"news": news.to_dict()}
+        return render_template('admin/news_review_detail.html', data=data)
+    # 1.获取参数
+    news_id = request.json.get("news_id")
+    action = request.json.get("action")
+
+    # 2.判断参数
+    if not all([news_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+    if action not in ("accept", "reject"):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    news = None
+    try:
+        # 3.查询新闻
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="未查询到数据")
+
+    # 4.根据不同的状态设置不同的值
+    if action == "accept":
+        news.status = 0
+    else:
+        # 拒绝通过，需要获取原因
+        reason = request.json.get("reason")
+        if not reason:
+            return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+        news.reason = reason
+        news.status = -1
+
+    # 保存数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="数据保存失败")
+    return jsonify(errno=RET.OK, errmsg="操作成功")
+
+
+
 
 
 @admin_blue.route('/news_review')
@@ -13,6 +81,8 @@ def news_review():
     """返回待审核新闻列表"""
 
     page = request.args.get("p", 1)
+    keywords = request.args.get("keywords", "")
+
     try:
         page = int(page)
     except Exception as e:
@@ -23,8 +93,16 @@ def news_review():
     current_page = 1
     total_page = 1
 
+
+
     try:
-        paginate = News.query.filter(News.status != 0) \
+        filters = [News.status != 0]
+        # 如果有关键词
+        if keywords:
+            # 添加关键词的检索选项
+            filters.append(News.title.contains(keywords))
+
+        paginate = News.query.filter(*filters) \
             .order_by(News.create_time.desc()) \
             .paginate(page, constants.ADMIN_NEWS_PAGE_MAX_COUNT, False)
 
