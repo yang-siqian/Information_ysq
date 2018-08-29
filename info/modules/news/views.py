@@ -1,10 +1,60 @@
 from info import constants, db
-from info.models import News, Comment, CommentLike
+from info.models import News, Comment, CommentLike, User
 from info.modules.news import news_blue
 from flask import render_template, current_app, g, abort, jsonify, request
 
 from info.utils.response_code import RET
 from info.utils.set_filters import user_login_data
+
+@news_blue.route('/followed_user', methods=["POST"])
+@user_login_data
+def followed_user():
+    """关注/取消关注用户"""
+    if not g.user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    user_id = request.json.get("user_id")
+    action = request.json.get("action")
+
+    if not all([user_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    if action not in ("follow", "unfollow"):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
+
+    # 查询到关注的用户信息
+    try:
+        target_user = User.query.get(user_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询数据库失败")
+
+    if not target_user:
+        return jsonify(errno=RET.NODATA, errmsg="未查询到用户数据")
+
+    # 根据不同操作做不同逻辑
+    if action == "follow":
+        if target_user.followers.filter(User.id == g.user.id).count() > 0:
+            return jsonify(errno=RET.DATAEXIST, errmsg="当前已关注")
+        target_user.followers.append(g.user)
+    else:
+        if g.user in target_user.followers:
+            target_user.followers.remove(g.user)
+
+    # 保存到数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="数据保存错误")
+
+    return jsonify(errno=RET.OK, errmsg="操作成功")
+
+
+
+
+
+
 
 @news_blue.route("/comment_like", methods=['POST'])
 @user_login_data
@@ -180,12 +230,20 @@ def news_detail(news_id):
 
     # 查询新闻数据
     news = None
+    author = None
     try:
         news = News.query.get(news_id)
+        author = User.query.filter(User.id==news.user_id).first()
     except Exception as e:
         current_app.logger.error(e)
     if not news:
         abort(404)
+    is_followed = False
+    if author:
+        if user in author.followers:
+            is_followed = True
+
+
     # 更新点击次数
     news.clicks += 1
     # 判断是否收藏该新闻，默认值为 false
@@ -231,6 +289,7 @@ def news_detail(news_id):
         "news_dict_li": news_dict_li,
         "is_collected": is_collected,
         "news": news.to_dict(),
-        "comments": comment_dict_li
+        "comments": comment_dict_li,
+        "is_followed":is_followed
     }
     return render_template("news/detail.html",data=data)
